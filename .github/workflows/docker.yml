@@ -39,6 +39,6 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ashishpal/animal-farm-nodejs:latest
+            ashishpal101/animal-farm-nodejs:latest
             ghcr.io/${{ github.repository_owner }}/animal-farm-nodejs:latest
 
