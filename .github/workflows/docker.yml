@@ -39,6 +39,9 @@ jobs:
   # 1. Node.js CI (always runs)
   test:
     needs: set-environment
+    if: |
+      (github.event_name == 'push' && (github.ref_name == 'pre-release' || github.ref_name == 'dev')) ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'pre-release'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -57,7 +60,10 @@ jobs:
 
   # 2. Docker build + push (only on push to master, not PRs)
   build-and-push:
-    needs: [test , set-environment]   # only runs if tests pass
+    needs: [test , set-environment] 
+    if: |
+      (github.event_name == 'push' && (github.ref_name == 'pre-release' || github.ref_name == 'dev')) ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'pre-release'))  # only runs if tests pass
     runs-on: ubuntu-latest
 
     steps:
