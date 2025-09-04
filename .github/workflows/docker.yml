@@ -9,8 +9,36 @@ on:
       - master
 
 jobs:
+  set-environment:
+      runs-on: ubuntu-latest
+      outputs:
+        ENV_NAME: ${{ steps.setenv.outputs.ENV_NAME }}
+      steps:
+        - id: setenv
+          env:
+            DISPATCH_ENV: ${{ github.event.inputs.environment || '' }}
+            GITHUB_EVENT_NAME: ${{ github.event_name }}
+            GITHUB_REF: ${{ github.ref }}
+            GITHUB_REF_NAME: ${{ github.ref_name }}
+            GITHUB_BASE_REF_NAME: ${{ github.base_ref }}
+          run: |
+            echo "Determining environment and image name..."
+            if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+              ENV_NAME="$DISPATCH_ENV"
+            elif [[ "$GITHUB_BASE_REF_NAME" == "dev"  || "$GITHUB_REF_NAME" == "dev" ]]; then
+              ENV_NAME=dev
+            elif [[ "$GITHUB_BASE_REF_NAME" == "pre-release" || "$GITHUB_REF_NAME" == "pre-release" ]]; then
+              ENV_NAME=pre-release
+            elif [[ "$GITHUB_REF" == refs/tags/* || "$GITHUB_BASE_REF_NAME" == "master" || "$GITHUB_REF_NAME" == "master" ]]; then
+              ENV_NAME=prod
+            else
+              ENV_NAME=dev
+            fi
+            echo "ENV_NAME=$ENV_NAME"
+            echo "ENV_NAME=$ENV_NAME" >> $GITHUB_OUTPUT
   # 1. Node.js CI (always runs)
   test:
+    needs: set-environment
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -29,7 +57,7 @@ jobs:
 
   # 2. Docker build + push (only on push to master, not PRs)
   build-and-push:
-    needs: test   # only runs if tests pass
+    needs: [test , set-environment]   # only runs if tests pass
     runs-on: ubuntu-latest
 
     steps:
