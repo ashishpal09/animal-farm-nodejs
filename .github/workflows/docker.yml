@@ -29,7 +29,7 @@ jobs:
 
   # 2. Docker build + push (only on push to master, not PRs)
   docker:
- #   needs: test   # only runs if tests pass
+    needs: test   # only runs if tests pass
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
