@@ -1,12 +1,21 @@
 name: CI + Docker Build
 
 on:
-  push:
-    branches:
-      - master
   pull_request:
     branches:
+      - dev
+      - pre-release
       - master
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - dev
+          - pre-release
+          - prod
 
 jobs:
   set-environment:
@@ -61,7 +70,7 @@ jobs:
   build-and-push:
     needs: [test , set-environment] 
     if: |
-      (github.event_name == 'push' && (github.ref_name == 'pre-release' || github.ref_name == 'dev')) ||
+      # (github.event_name == 'push' && (github.ref_name == 'pre-release' || github.ref_name == 'dev')) ||
       (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'pre-release'))  # only runs if tests pass
     runs-on: ubuntu-latest
 
@@ -69,6 +78,16 @@ jobs:
       # 1. Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
+        
+      - name: Check if MR target branch is allowed
+        if: github.event_name == 'pull_request'
+        run: |
+          BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
+          if [[ "$BASE_BRANCH" != "dev" && "$BASE_BRANCH" != "pre-release" && "$BASE_BRANCH" != "master" ]]; then
+            echo "This PR targets '$BASE_BRANCH' which is not an auto-triggered branch."
+            echo "Skipping job. To run this check, trigger it manually via workflow_dispatch."
+            exit 0
+          fi
 
       # 2. Set up QEMU (for multi-arch builds)
       - name: Set up QEMU
