@@ -20,16 +20,12 @@ on:
         required: false
         type: choice
         options:
-          - backup
-          - test
-          - restore
+            - h2
+            - mysql 
+            - mssql 
+            - oracle
+            - postgres
 
-env:
-  JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.16-8/x64
-  MAVEN_OPTS: -Xmx2G
-  SETTINGS_FILE: ./.gitlab-ci-templates/ci-settings.xml
-  ATLAS_OPTS: -Dmaven.repo.local=/home/runner/work/jira-apps-bi-core/.m2/repository
-  GITLAB_MAVEN_TOKEN: ${{ secrets.GITLAB_MAVEN_TOKEN }}
 
 ##############################################################################################################
 ### Setup Environment
