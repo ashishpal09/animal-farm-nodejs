@@ -20,12 +20,11 @@ on:
         required: false
         type: choice
         options:
-            - h2
-            - mysql 
-            - mssql 
-            - oracle
-            - postgres
-
+          - h2
+          - mysql
+          - mssql
+          - oracle
+          - postgres
 
 ##############################################################################################################
 ### Setup Environment
@@ -61,17 +60,14 @@ jobs:
           echo "ENV_NAME=$ENV_NAME" >> $GITHUB_OUTPUT
 
 ##############################################################################################################
-### Code Checks (Frontend + Sonar)
+### Code Checks (Frontend + Sonar) – ONLY MANUAL
 ##############################################################################################################
 
   frontend-check:
     name: frontend-check-${{ needs.set-environment.outputs.ENV_NAME }}
     needs: [set-environment]
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' &&
-      (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
@@ -79,38 +75,31 @@ jobs:
     name: sonarcloud-check-${{ needs.set-environment.outputs.ENV_NAME }}
     needs: [set-environment, frontend-check]
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' &&
-      (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
 ##############################################################################################################
-### Dependency Check
+### Dependency Check – AUTOMATIC
 ##############################################################################################################
 
   dependencies-check:
     name: dependencies-check-${{ needs.set-environment.outputs.ENV_NAME }}
     needs: [set-environment]
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
 
 ##############################################################################################################
-### Integration Tests (DBs)
+### Integration Tests (DBs) – ONLY MANUAL
 ##############################################################################################################
 
   h2-database-integration:
     name: h2-db-integration-check
     needs: [set-environment, sonarcloud-check]
     runs-on: ubuntu-latest
-    if: |
-      (github.event_name == 'workflow_dispatch' &&
-        (github.ref_name == 'dev' || github.ref_name == 'pre-release' || github.ref_name == 'master')) ||
-      (github.event_name == 'pull_request' &&
-        (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
@@ -118,11 +107,7 @@ jobs:
     name: mysql-db-integration-check
     needs: [set-environment, sonarcloud-check]
     runs-on: ubuntu-latest
-    if: |
-      (github.event_name == 'workflow_dispatch' &&
-        (github.ref_name == 'dev' || github.ref_name == 'pre-release' || github.ref_name == 'master')) ||
-      (github.event_name == 'pull_request' &&
-        (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Java 17
@@ -135,11 +120,7 @@ jobs:
     name: mssql-db-integration-check
     needs: [set-environment, sonarcloud-check]
     runs-on: ubuntu-latest
-    if: |
-      (github.event_name == 'workflow_dispatch' &&
-        (github.ref_name == 'dev' || github.ref_name == 'pre-release' || github.ref_name == 'master')) ||
-      (github.event_name == 'pull_request' &&
-        (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -151,11 +132,7 @@ jobs:
     name: oracle-db-integration-check
     needs: [set-environment, sonarcloud-check]
     runs-on: ubuntu-latest
-    if: |
-      (github.event_name == 'workflow_dispatch' &&
-        (github.ref_name == 'dev' || github.ref_name == 'pre-release' || github.ref_name == 'master')) ||
-      (github.event_name == 'pull_request' &&
-        (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
@@ -163,21 +140,17 @@ jobs:
     name: postgres-db-integration-check
     needs: [set-environment, sonarcloud-check]
     runs-on: ubuntu-latest
-    if: |
-      (github.event_name == 'workflow_dispatch' &&
-        (github.ref_name == 'dev' || github.ref_name == 'pre-release' || github.ref_name == 'master')) ||
-      (github.event_name == 'pull_request' &&
-        (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
 ##############################################################################################################
-### Endpoint & Service Integration
+### Endpoint & Service Integration – AUTOMATIC
 ##############################################################################################################
 
   endpoint-integration-test:
     name: endpoint-integration-test
-    needs: [set-environment, h2-database-integration, mysql-database-integration, mssql-database-integration, oracle-database-integration, postgres-database-integration]
+    needs: [set-environment, dependencies-check]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -189,7 +162,7 @@ jobs:
 
   service-integration-test:
     name: service-integration-test
-    needs: [set-environment, h2-database-integration, mysql-database-integration, mssql-database-integration, oracle-database-integration, postgres-database-integration]
+    needs: [set-environment, dependencies-check]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -200,7 +173,7 @@ jobs:
           java-version: '17'
 
 ##############################################################################################################
-### Update Plugins Version
+### Update Plugins Version – AUTOMATIC
 ##############################################################################################################
 
   update-plugins-version:
@@ -211,14 +184,14 @@ jobs:
       - uses: actions/checkout@v4
 
 ##############################################################################################################
-### Artifact Generation
+### Artifact Generation – AUTOMATIC
 ##############################################################################################################
 
   generate-artifact:
     name: generate-artifact
     needs: [set-environment, update-plugins-version]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && (github.ref_name == 'dev' || github.ref_name == 'pre-release' || github.ref_name == 'master')
+    if: github.event_name == 'pull_request'
     strategy:
       matrix:
         APP: [powerbi, tableau, bigquery, sql]
