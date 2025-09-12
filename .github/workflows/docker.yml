@@ -208,7 +208,7 @@ jobs:
       group: st-heavy-runners
     needs: [ set-environment , sonarcloud-check ]
     environment: ${{ needs.set-environment.outputs.ENV_NAME }}
-
+    steps:
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
