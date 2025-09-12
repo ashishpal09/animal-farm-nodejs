@@ -1,4 +1,5 @@
-name: CI + Docker Build
+
++name: CI + Docker Build
 
 on:
   pull_request:
@@ -69,7 +70,7 @@ jobs:
   build-and-push:
     needs: [test , set-environment] 
     if: |
-      (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'pre-release'))  # only runs if tests pass
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'pre-release'))
     runs-on: ubuntu-latest
 
     steps:
