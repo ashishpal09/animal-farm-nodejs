@@ -79,17 +79,18 @@ jobs:
     name: frontend-check-${{ needs.set-environment.outputs.ENV_NAME }}
     needs: [set-environment]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_group == 'frontend'
     steps:
       - uses: actions/checkout@v4
 
   sonarcloud-check:
     name: sonarcloud-check-${{ needs.set-environment.outputs.ENV_NAME }}
-    needs: [set-environment, frontend-check]
+    needs: [set-environment]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_group == 'sonar'
     steps:
       - uses: actions/checkout@v4
+
 
 ##############################################################################################################
 ### Dependency Check – AUTOMATIC
@@ -150,11 +151,12 @@ jobs:
 
   postgres-database-integration:
     name: postgres-db-integration-check
-    needs: [set-environment, sonarcloud-check]
+    needs: [set-environment]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_group == 'postgres'
     steps:
       - uses: actions/checkout@v4
+
 
 ##############################################################################################################
 ### Endpoint & Service Integration – AUTOMATIC
