@@ -1,6 +1,5 @@
 name: CI-CD
 
-
 on:
   push:
     branches:
@@ -75,21 +74,34 @@ jobs:
 ### Code Checks (Frontend + Sonar) – ONLY MANUAL
 ##############################################################################################################
 
+##############################################################################################################
+### Code Checks (Frontend + Sonar) – auto for selected MR targets, manual otherwise
+##############################################################################################################
+
   frontend-check:
     name: frontend-check-${{ needs.set-environment.outputs.ENV_NAME }}
     needs: [set-environment]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_group == 'frontend'
+    # Auto-run when this is a pull_request targeting dev/pre-release/master.
+    # Allow manual run via workflow_dispatch when job_group == 'frontend'.
+    if: ${{ (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
+           || (github.event_name == 'workflow_dispatch' && github.event.inputs.job_group == 'frontend') }}
     steps:
       - uses: actions/checkout@v4
-
+      # ... your frontend steps here ...
+  
   sonarcloud-check:
     name: sonarcloud-check-${{ needs.set-environment.outputs.ENV_NAME }}
-    needs: [set-environment, frontend-check]
+    needs: [set-environment]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_group == 'sonar'
+    # Same logic as frontend: auto-run for PRs targeting dev/pre-release/master,
+    # manual via workflow_dispatch when job_group == 'sonar'.
+    if: ${{ (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
+           || (github.event_name == 'workflow_dispatch' && github.event.inputs.job_group == 'sonar') }}
     steps:
       - uses: actions/checkout@v4
+      # ... your sonarcloud analysis steps here ...
+
 
 ##############################################################################################################
 ### Dependency Check – AUTOMATIC
