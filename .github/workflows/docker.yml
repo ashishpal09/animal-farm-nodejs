@@ -149,7 +149,7 @@ jobs:
     name: postgres-db-integration-check
     needs: [set-environment, sonarcloud-check]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.db_operation == 'postgres'
     steps:
       - uses: actions/checkout@v4
 
