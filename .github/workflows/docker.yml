@@ -85,12 +85,11 @@ jobs:
 
   sonarcloud-check:
     name: sonarcloud-check-${{ needs.set-environment.outputs.ENV_NAME }}
-    needs: [set-environment]
+    needs: [set-environment, frontend-check]
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_group == 'sonar'
     steps:
       - uses: actions/checkout@v4
-
 
 ##############################################################################################################
 ### Dependency Check – AUTOMATIC
@@ -110,17 +109,17 @@ jobs:
 
   h2-database-integration:
     name: h2-db-integration-check
-    needs: [set-environment, sonarcloud-check]
+    needs: [set-environment]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_group == 'h2'
     steps:
       - uses: actions/checkout@v4
 
   mysql-database-integration:
     name: mysql-db-integration-check
-    needs: [set-environment, sonarcloud-check]
+    needs: [set-environment]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_group == 'mysql'
     steps:
       - uses: actions/checkout@v4
       - name: Setup Java 17
@@ -131,9 +130,9 @@ jobs:
 
   mssql-database-integration:
     name: mssql-db-integration-check
-    needs: [set-environment, sonarcloud-check]
+    needs: [set-environment]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_group == 'mssql'
     steps:
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -143,9 +142,9 @@ jobs:
 
   oracle-database-integration:
     name: oracle-db-integration-check
-    needs: [set-environment, sonarcloud-check]
+    needs: [set-environment]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_group == 'oracle'
     steps:
       - uses: actions/checkout@v4
 
@@ -156,7 +155,6 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.job_group == 'postgres'
     steps:
       - uses: actions/checkout@v4
-
 
 ##############################################################################################################
 ### Endpoint & Service Integration – AUTOMATIC
