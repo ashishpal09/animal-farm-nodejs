@@ -24,11 +24,14 @@ on:
         options:
           - dev
           - pre-release
-      db_operation:
-        description: 'Database operation to perform'
-        required: false
+      job_group:
+        description: 'Which manual checks to run'
+        required: true
         type: choice
         options:
+          - none
+          - frontend
+          - sonar
           - h2
           - mysql
           - mssql
