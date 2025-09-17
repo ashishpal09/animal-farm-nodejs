@@ -1,14 +1,6 @@
 name: CI-CD
 
 on:
-  push:
-    branches:
-      - dev
-      - pre-release
-      - master
-      - ASIT-485
-    tags:
-      - '*'
   pull_request:
     branches:
       - dev
@@ -23,11 +15,7 @@ on:
         options:
           - dev
           - pre-release
-
-
-
-
-
+          - prod
 
 ##############################################################################################################
 ### Setup Environment
@@ -43,60 +31,50 @@ jobs:
         env:
           DISPATCH_ENV: ${{ github.event.inputs.environment || '' }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          GITHUB_REF: ${{ github.ref }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
           GITHUB_BASE_REF_NAME: ${{ github.base_ref }}
         run: |
-          echo "Determining environment and image name..."
+          echo "Determining environment..."
           if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
             ENV_NAME="$DISPATCH_ENV"
-          elif [[ "$GITHUB_BASE_REF_NAME" == "dev"  || "$GITHUB_REF_NAME" == "dev" ]]; then
+          elif [[ "$GITHUB_BASE_REF_NAME" == "dev" ]]; then
             ENV_NAME=dev
-          elif [[ "$GITHUB_BASE_REF_NAME" == "pre-release" || "$GITHUB_REF_NAME" == "pre-release" ]]; then
+          elif [[ "$GITHUB_BASE_REF_NAME" == "pre-release" ]]; then
             ENV_NAME=pre-release
-          elif [[ "$GITHUB_REF" == refs/tags/* || "$GITHUB_BASE_REF_NAME" == "master" || "$GITHUB_REF_NAME" == "master" ]]; then
+          elif [[ "$GITHUB_BASE_REF_NAME" == "master" ]]; then
             ENV_NAME=prod
           else
-            ENV_NAME=dev
+            ENV_NAME=unknown
           fi
-          echo "ENV_NAME=$ENV_NAME"
           echo "ENV_NAME=$ENV_NAME" >> $GITHUB_OUTPUT
 
 ##############################################################################################################
-### Code Checks (Frontend + Sonar) – ONLY MANUAL
-##############################################################################################################
-
-##############################################################################################################
-### Code Checks (Frontend + Sonar) – auto for selected MR targets, manual otherwise
+### Code Checks (Frontend + Sonar)
 ##############################################################################################################
 
   frontend-check:
     name: frontend-check-${{ needs.set-environment.outputs.ENV_NAME }}
     needs: [set-environment]
     runs-on: ubuntu-latest
-    # Auto-run when this is a pull_request targeting dev/pre-release/master.
-    # Allow manual run via workflow_dispatch when job_group == 'frontend'.
     if: |
-      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'pre-release'))
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
     steps:
       - uses: actions/checkout@v4
-      # ... your frontend steps here ...
-  
+      # frontend steps here
+
   sonarcloud-check:
     name: sonarcloud-check-${{ needs.set-environment.outputs.ENV_NAME }}
     needs: [set-environment]
     runs-on: ubuntu-latest
-    # Same logic as frontend: auto-run for PRs targeting dev/pre-release/master,
-    # manual via workflow_dispatch when job_group == 'sonar'.
     if: |
-      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'pre-release'))
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
     steps:
       - uses: actions/checkout@v4
-      # ... your sonarcloud analysis steps here ...
-
+      # sonarcloud steps here
 
 ##############################################################################################################
-### Dependency Check – AUTOMATIC
+### Dependency Check
 ##############################################################################################################
 
   dependencies-check:
@@ -104,12 +82,13 @@ jobs:
     needs: [set-environment]
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'pre-release'))
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request')
     steps:
       - uses: actions/checkout@v4
 
 ##############################################################################################################
-### Integration Tests (DBs) – ONLY MANUAL
+### Integration Tests (Databases)
 ##############################################################################################################
 
   h2-database-integration:
@@ -117,7 +96,8 @@ jobs:
     needs: [set-environment]
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'pre-release'))
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
     steps:
       - uses: actions/checkout@v4
 
@@ -126,7 +106,8 @@ jobs:
     needs: [set-environment]
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'pre-release'))
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
     steps:
       - uses: actions/checkout@v4
       - name: Setup Java 17
@@ -140,7 +121,8 @@ jobs:
     needs: [set-environment]
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'pre-release'))
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
     steps:
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -153,7 +135,8 @@ jobs:
     needs: [set-environment]
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'pre-release'))
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
     steps:
       - uses: actions/checkout@v4
 
@@ -162,12 +145,31 @@ jobs:
     needs: [set-environment]
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release')) || (github.event_name == 'workflow_dispatch' && (github.event.inputs.environment == 'dev' || github.event.inputs.environment == 'pre-release'))
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'dev' || github.base_ref == 'pre-release' || github.base_ref == 'master'))
     steps:
       - uses: actions/checkout@v4
 
+##############################################################################################################
+### Update Version (Disabled)
+##############################################################################################################
 
+  update-version:
+    runs-on: ubuntu-latest
+    if: false
+    steps: []
 
+##############################################################################################################
+### Update Artifact
+##############################################################################################################
 
-
-
+  update-artifact:
+    name: update-artifact-${{ needs.set-environment.outputs.ENV_NAME }}
+    needs: [set-environment]
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev') ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'pre-release' || github.base_ref == 'master'))
+    steps:
+      - uses: actions/checkout@v4
+      # update artifact steps here
